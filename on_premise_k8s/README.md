@@ -37,7 +37,7 @@ brew install helm
 ```bash
 brew install kubectl
 ```
-2. **Prepare host environment for VM**
+2. **Prepare host environment for VM** \
 Use Ubuntu or Windows with installed VirtualBox. Launch VM with Ubuntu 24, network in bridged mode.
 
 3. **Configure the Kubernetes Master and Worked Nodes**
@@ -63,7 +63,7 @@ network:
 ```bash
 netplan apply
 ```
-- Install container runtime ([Link](https://kubernetes.io/docs/setup/production-environment/container-runtimes/))
+- Install container runtime ([Link](https://kubernetes.io/docs/setup/production-environment/container-runtimes/)) \
 Enable IPv4 packet forwarding
 ```bash
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
@@ -75,11 +75,11 @@ Verify that net.ipv4.ip_forward is set to 1 with
 ```bash
 sysctl net.ipv4.ip_forward
 ```
-Check abd switch off SWAP. Comment a line with /swap.img in */etc/fstab*
+Disable SWAP. Comment a line with /swap.img in */etc/fstab*
 ```bash
 swapoff -a
 ```
-Install containerd ([Link](https://github.com/containerd/containerd/blob/main/docs/getting-started.md)). ***Check versions!!!***
+Install containerd ([Link](https://github.com/containerd/containerd/blob/main/docs/getting-started.md)). ***Check versions!!!*** \
 Install runc
 ```bash
 wget https://github.com/opencontainers/runc/releases/download/v1.3.2/runc.amd64
@@ -109,7 +109,7 @@ systemctl daemon-reload
 systemctl enable --now containerd
 systemctl status containerd
 ```
-Install kubelet kubeadm kubectl ([Link](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/)
+Install kubelet kubeadm kubectl ([Link](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/))
 ```bash
 apt-get update
 apt-get install -y apt-transport-https ca-certificates curl gpg
