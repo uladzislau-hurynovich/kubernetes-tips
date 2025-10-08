@@ -209,7 +209,7 @@ helm install loki grafana/loki -f loki-values.yaml -n monitoring --create-namesp
 - Promtail
 ```bash
 helm repo add grafana https://grafana.github.io/helm-charts
-helm install loki grafana/promtail -f promtail-values.yaml -n monitoring --create-namespace
+helm install promtail grafana/promtail -f promtail-values.yaml -n monitoring --create-namespace
 ```
 - Prometheus
 ```bash
