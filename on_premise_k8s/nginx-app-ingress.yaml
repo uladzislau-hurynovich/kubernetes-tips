@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx
+  namespace: test
+  annotations:
+    cert-manager.io/issuer: "test-issuer"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: ingress
+  rules:
+  - host: "test.local"
+    http:
+      paths:
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+           name: nginx
+           port: 
+            number: 80
+  tls:
+  - hosts:
+    - test.local
+    secretName: nginx-tls

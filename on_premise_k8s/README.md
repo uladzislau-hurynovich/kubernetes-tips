@@ -199,22 +199,65 @@ helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs
 - Grafana
 ```bash
 helm repo add grafana https://grafana.github.io/helm-charts
-helm install grafana grafana/grafana -f grafana-values.yaml --namespace monitoring --create-namespace
+helm install grafana grafana/grafana -f grafana-values.yaml --namespace monitoring --version 10.1.2 --create-namespace
 ```
 - Loki (SingleBinary)
 ```bash
 helm repo add grafana https://grafana.github.io/helm-charts
-helm install loki grafana/loki -f loki-values.yaml -n monitoring --create-namespace
+helm install loki grafana/loki -f loki-values.yaml -n monitoring --version 6.44.0 --create-namespace
 ```
 - Promtail
 ```bash
 helm repo add grafana https://grafana.github.io/helm-charts
-helm install promtail grafana/promtail -f promtail-values.yaml -n monitoring --create-namespace
+helm install promtail grafana/promtail -f promtail-values.yaml -n monitoring --version 6.17.0 --create-namespace
 ```
 - Prometheus
 ```bash
 helm repo add prometheus https://prometheus-community.github.io/helm-charts
-helm install prometheus prometheus/prometheus -n monitoring --create-namespace --set server.persistentVolume.storageClass=nfs-client --set alertmanager.enabled=false
+helm install prometheus prometheus/prometheus -n monitoring --version 27.39.0 --create-namespace --set server.persistentVolume.storageClass=nfs-client --set alertmanager.enabled=false
+```
+- MetalLB
+```bash
+helm repo add metallb https://metallb.github.io/metallb
+helm install metallb metallb/metallb -n metallb --create-namespace
+kubectl apply -f metallb.yaml
+```
+- Ingress
+```bash
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm install ingress-nginx ingress-nginx/ingress-nginx -f ingress-values.yaml -n ingress-nginx --version 4.13.3 --create-namespace
+```
+- Cert Manager
+```bash
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.9.2/cert-manager.crds.yaml
+helm repo add jetstack https://charts.jetstack.io
+helm install cert-manager jetstack/cert-manager -f cert-manager-values.yaml -n cert-manager  --version v1.9.2 --create-namespace
+kubectl apply -f self-signed-cert.yaml
+kubectl run nginx --image nginx -n test
+kubectl expose pod nginx --port=80 --name=nginx -n test
+kubectl apply -f nginx-app-ingress.yaml
+```
+- Priority Classes
+```bash
+kubectl apply -f priorityclass.yaml
+```
+- Istio SideCar mode
+```bash
+helm repo add istio https://istio-release.storage.googleapis.com/charts
+helm install istio-base istio/base -n istio-system --set defaultRevision=default --create-namespace
+helm install istiod istio/istiod -n istio-system --wait
+kubectl create namespace istio-ingress
+helm install istio-ingress istio/gateway -n istio-ingress --wait
+#istio API (not Kubernetes Gateway API)
+kubectl create ns test  
+kubectl label namespace test istio-injection=enabled  
+kubectl run nginx --image nginx -n test
+kubectl expose pod nginx --port=80 --name=nginx -n test
+kubectl apply -f istio-gateway
+```
+- Argocd
+```bash
+
 ```
 ---
 

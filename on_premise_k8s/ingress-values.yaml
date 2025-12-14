@@ -1,0 +1,24 @@
+controller:
+  ingressClassResource:
+    name: ingress
+    enabled: true
+    default: true
+    controllerValue: "k8s.io/ingress-nginx"
+  replicaCount: 1
+  minAvailable: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 90Mi
+
+  service:
+    enabled: true
+    type: LoadBalancer
+    annotations:
+      metallb.io/loadBalancerIPs: 192.168.1.201
+      metallb.io/address-pool: first-pool
+
+  admissionWebhooks:
+    enabled: false
+
+revisionHistoryLimit: 2
