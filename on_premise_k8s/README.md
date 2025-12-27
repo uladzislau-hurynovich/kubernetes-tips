@@ -85,12 +85,6 @@ Install runc
 wget https://github.com/opencontainers/runc/releases/download/v1.3.2/runc.amd64
 install -m 755 runc.amd64 /usr/local/sbin/runc
 ```
-Install CNI plugin
-```bash
-wget https://github.com/containernetworking/plugins/releases/download/v1.8.0/cni-plugins-linux-amd64-v1.8.0.tgz
-mkdir -p /opt/cni/bin
-tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.8.0.tgz
-```
 Install and configure containerd
 ```bash
 wget https://github.com/containerd/containerd/releases/download/v2.1.4/containerd-2.1.4-linux-amd64.tar.gz
