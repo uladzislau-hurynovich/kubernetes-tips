@@ -94,7 +94,7 @@ containerd config default | tee /etc/containerd/config.toml
 #Add to the /etc/containerd/config.toml
   [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
     SystemdCgroup = true
-#aAfter
+#After
   [plugins.'io.containerd.grpc.v1.cri'.x509_key_pair_streaming]
     tls_cert_file = ''
     tls_key_file = ''
@@ -137,6 +137,7 @@ kubectl apply -f calico.yaml
 ```
 Join worker nodes
 ```bash
+kubeadm token create --print-join-command
 kubeadm join 192.168.1.100:6443 --token i8vsnp.ezpdqmusb01qhihd \
         --discovery-token-ca-cert-hash sha256:c887a0e1fe692d1c1c652c8d1840c00facc08ea236411045ba886f47060c7055
 ```
@@ -248,6 +249,14 @@ kubectl label namespace test istio-injection=enabled
 kubectl run nginx --image nginx -n test
 kubectl expose pod nginx --port=80 --name=nginx -n test
 kubectl apply -f istio-gateway
+```
+- Opensearch
+```bash
+helm repo add opensearch https://opensearch-project.github.io/helm-charts/
+helm repo add fluent https://fluent.github.io/helm-charts
+helm install opensearch opensearch/opensearch -f opensearch-values.yaml -n logi --create-namespace
+helm install opensearch-dashboard opensearch/opensearch-dashboards -n logi --create-namespace
+helm install fluent-bit fluent/fluent-bit -f opensearch-fluentbit-values.yaml --namespace logi --create-namespace
 ```
 - Argocd
 ```bash

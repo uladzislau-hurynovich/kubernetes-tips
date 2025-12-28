@@ -1,0 +1,15 @@
+singleNode: true
+persistence:
+  enabled: true
+  enableInitChown: true
+  labels:
+    enabled: false
+    additionalLabels: {}
+  accessModes:
+    - ReadWriteOnce
+  storageClass: "nfs-client"
+  size: 8Gi
+  annotations: {}
+extraEnvs:
+  - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
+    value: "lufIHI11!"
