@@ -24,12 +24,12 @@ echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf
 sudo sysctl -p
 ```
 ## 3. Configure NAT
-Detect the primary network interface
+- Detect the primary network interface
 ```bash
 ip address
 ip route get 8.8.8.8
 ```
-Apply NAT (replace ens5 if required)
+- Apply NAT (replace ens5 if required)
 ```bash
 sudo iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -o ens5 -j MASQUERADE
 sudo netfilter-persistent save
@@ -83,15 +83,15 @@ PersistentKeepalive = 25
 sudo wg set wg0 peer <client_public.key> allowed-ips 10.0.0.2/32
 ```
 ## 10. Troubleshooting
-WireGuard status
+- WireGuard status
 ```bash
 sudo wg
 ```
-UDP traffic
+- UDP traffic
 ```bash
 sudo tcpdump -i ens5 udp port 51820
 ```
-NAT rules
+- NAT rules
 ```bash
 sudo iptables -t nat -L -n -v
 ```
