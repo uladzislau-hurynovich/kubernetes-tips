@@ -12,6 +12,7 @@ This project provides reusable infrastructure blueprints, scripts, and Helm conf
 |--------------|-------------|------|
 | 🏠 **On-prem K8S** | Local Kubernetes cluster running on virtual machines. Includes NFS server, 1 master, and 2 worker nodes for development and testing. | [View setup →](./on_premise_k8s/README.md) |
 | ☁️ **AWS EKS** | Cloud-based Kubernetes cluster deployed via Terraform and Helm. Includes monitoring stack and best practices for production-grade workloads. | [View setup →](./eks/README.md) |
+| ☁️ **Wireguard AWS EC2** | Instructions on how to set up Wireguard and provide access to internal AWS resources. | [View setup →](./wireguard/README.md) |
 
 ---
 
