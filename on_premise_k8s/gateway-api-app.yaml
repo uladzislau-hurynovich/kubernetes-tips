@@ -1,0 +1,243 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gateway-cert
+  namespace: traefik
+spec:
+  secretName: gateway-tls
+  dnsNames:
+    - prometheus.local
+    - alert.local
+    - mailhog.local
+  issuerRef:
+    name: gateway-api-issuer
+    kind: ClusterIssuer
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: nginx-app-gateway
+  namespace: traefik
+spec:
+  gatewayClassName: traefik
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.local"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: gateway-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-to-https-redirect
+  namespace: traefik
+spec:
+  parentRefs:
+    - name: nginx-app-gateway
+      sectionName: http
+  hostnames:
+    - prometheus.local
+    - alert.local
+    - mailhog.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            port: 443
+            statusCode: 301
+
+# ---
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: HTTPRoute
+# metadata:
+#   name: prometheus-route
+#   namespace: monitoring
+# spec:
+#   parentRefs:
+#     - name: nginx-app-gateway
+#       namespace: traefik
+#       sectionName: https
+#   hostnames:
+#     - prometheus.local 
+#   rules:
+#     - matches:
+#         - path:
+#             type: PathPrefix
+#             value: /
+#       # filters:
+#       #   - type: URLRewrite
+#       #     urlRewrite:
+#       #       path:
+#       #         type: ReplacePrefixMatch
+#       #         replacePrefixMatch: /
+#       backendRefs:
+#         - name: prometheus-server
+#           port: 80
+#           weight: 1 
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mailhog-route
+  namespace: monitoring
+spec:
+  parentRefs:
+    - name: nginx-app-gateway
+      namespace: traefik
+      sectionName: https
+  hostnames:
+    - mailhog.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      # filters:
+      #   - type: URLRewrite
+      #     urlRewrite:
+      #       path:
+      #         type: ReplacePrefixMatch
+      #         replacePrefixMatch: /
+      backendRefs:
+        - name: mailhog
+          port: 8025
+          weight: 1 
+# ---
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: HTTPRoute
+# metadata:
+#   name: alerts-route
+#   namespace: monitoring
+# spec:
+#   parentRefs:
+#     - name: nginx-app-gateway
+#       namespace: traefik
+#       sectionName: https
+#   hostnames:
+#     - alert.local
+#   rules:
+#     - matches:
+#         - path:
+#             type: PathPrefix
+#             value: /
+#       backendRefs:
+#         - name: prometheus-alertmanager
+#           port: 9093
+#           weight: 1 
+# ---
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: nginx-app
+#   namespace: default
+#   labels:
+#     app: nginx-app
+# spec:
+#   containers:
+#     - name: nginx
+#       image: nginx:1.25-alpine
+#       ports:
+#         - containerPort: 80
+#       resources:
+#         limits:
+#           cpu: "250m"
+#           memory: "128Mi"
+#         requests:
+#           cpu: "100m"
+#           memory: "64Mi"
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: nginx-app-service
+#   namespace: default
+# spec:
+#   selector:
+#     app: nginx-app
+#   ports:
+#     - protocol: TCP
+#       port: 80 
+#       targetPort: 80
+#   type: ClusterIP 
+# ---
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: HTTPRoute
+# metadata:
+#   name: nginx-app-route
+#   namespace: test
+# spec:
+#   parentRefs:
+#     - name: nginx-app-gateway
+#       namespace: traefik
+#       sectionName: https
+#   hostnames:
+#     - test.local
+#   rules:
+#     - matches:
+#         - path:
+#             type: PathPrefix
+#             value: /tomcat
+#       filters:
+#         - type: URLRewrite
+#           urlRewrite:
+#             path:
+#               type: ReplacePrefixMatch
+#               replacePrefixMatch: /
+#       backendRefs:
+#         - name: nginx-app-service
+#           port: 80
+#           weight: 1  
+# ---
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: nginx-app
+#   namespace: test
+#   labels:
+#     app: nginx-app
+# spec:
+#   containers:
+#     - name: nginx
+#       image: rawmind/web-test
+#       ports:
+#         - containerPort: 8080
+#       resources:
+#         limits:
+#           cpu: "250m"
+#           memory: "128Mi"
+#         requests:
+#           cpu: "100m"
+#           memory: "64Mi"
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: nginx-app-service
+#   namespace: test
+# spec:
+#   selector:
+#     app: nginx-app
+#   ports:
+#     - protocol: TCP
+#       port: 80 
+#       targetPort: 8080
+#   type: ClusterIP 

@@ -1,24 +1,15 @@
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: selfsigned-issuer
+  name: root-issuer
 spec:
   selfSigned: {}
 ---
 apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: test-issuer
-  namespace: test
-spec:
-  ca:
-    secretName: root-secret
----
-apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: test-certificate
-  namespace: test
+  name: root-certificate
+  namespace: cert-manager
 spec:
   secretName: root-secret
   duration: 9125h
@@ -31,6 +22,14 @@ spec:
     size: 2048
     rotationPolicy: Always
   issuerRef:
-    name: selfsigned-issuer
+    name: root-issuer
     kind: ClusterIssuer
     group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: gateway-api-issuer
+spec:
+  ca:
+    secretName: root-secret

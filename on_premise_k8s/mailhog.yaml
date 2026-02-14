@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailhog
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailhog
+  template:
+    metadata:
+      labels:
+        app: mailhog
+    spec:
+      containers:
+        - name: mailhog
+          image: mailhog/mailhog:latest
+          ports:
+            - containerPort: 1025 # SMTP
+            - containerPort: 8025 # UI
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailhog
+  namespace: monitoring
+spec:
+  selector:
+    app: mailhog
+  ports:
+    - name: smtp
+      port: 1025
+      targetPort: 1025
+    - name: http
+      port: 8025
+      targetPort: 8025
+---
+#htpasswd -nB testuser
+apiVersion: v1
+kind: Secret
+metadata:
+  name: basic-auth-secret
+  namespace: monitoring
+type: Opaque
+stringData:
+  users: |
+    testuser:$2y$05$/mALIrsmCfELApN7BA.x7u.ZU401F3FS.GavTp8BML9LARNBf1NH2 
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: test-auth-middleware
+  namespace: monitoring
+spec:
+  basicAuth:
+    secret: basic-auth-secret
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mailhog-route
+  namespace: monitoring
+spec:
+  parentRefs:
+    - name: nginx-app-gateway
+      namespace: traefik
+      sectionName: https
+  hostnames:
+    - mailhog.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: mailhog
+          port: 8025
+          weight: 1 
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: test-auth-middleware

@@ -1,0 +1,76 @@
+config:
+  outputs: |
+    [SERVICE]
+        Flush        5
+        Daemon       Off
+        Log_Level    info
+        HTTP_Server  On
+        HTTP_Port    2020
+        storage.metrics Off
+    [INPUT]
+        Name             tail
+        Path             /var/log/containers/*.log
+        Tag              kube.*
+        Parser           json
+        DB               /var/log/fluentbit_containers.db
+        Mem_Buf_Limit    64MB
+        Skip_Long_Lines  On
+        Refresh_Interval 10
+        Ignore_Older     24h
+
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Merge_Log           On
+        Keep_Log            Off
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude On
+
+    [OUTPUT]
+        Name                es
+        Match               kube.*
+        Host                elasticsearch-es-internal-http
+        Port                9200
+        HTTP_User           fluentbit_user
+        HTTP_Passwd         lufihi05
+        Logstash_Format     On
+        Logstash_Prefix     fluentbit-kube
+        Suppress_Type_Name  On
+        TLS                 On
+        TLS.Verify          Off
+        net.keepalive       On
+        net.keepalive_idle_timeout 30
+        Buffer_Size         10M
+        Retry_Limit         5
+        Trace_Error         On
+        Replace_Dots        On
+
+    [INPUT]
+        Name             tail
+        Path             /var/log/*.log
+        Tag              host.*
+        Parser           json
+        DB               /var/log/fluentbit_host.db
+        Mem_Buf_Limit    32MB
+        Skip_Long_Lines  On
+        Refresh_Interval 10
+        Ignore_Older     24h
+
+    [OUTPUT]
+        Name                es
+        Match               host.*
+        Host                elasticsearch-es-internal-http
+        Port                9200
+        HTTP_User           fluentbit_user
+        HTTP_Passwd         lufihi05
+        Logstash_Format     On
+        Logstash_Prefix     fluentbit-host
+        Suppress_Type_Name  On
+        TLS                 On
+        TLS.Verify          Off
+        net.keepalive       On
+        net.keepalive_idle_timeout 30
+        Buffer_Size         10M
+        Retry_Limit         5
+        Trace_Error         On
+        Replace_Dots        On

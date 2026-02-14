@@ -1,0 +1,57 @@
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
+metadata:
+  name: my-cluster
+  namespace: rook-ceph
+spec:
+  skipUpgradeChecks: true
+  dataDirHostPath: /var/lib/rook
+  cephVersion:
+    image: quay.io/ceph/ceph:v19.2.3
+    allowUnsupported: true
+  mon:
+    count: 1
+    allowMultiplePerNode: true
+  mgr:
+    count: 1
+    allowMultiplePerNode: true
+    modules:
+      - name: rook
+        enabled: true
+  dashboard:
+    enabled: true
+  crashCollector:
+    disable: true
+  storage:
+    nodes:
+      - name: "k8s-worker1" 
+        devices:
+          - name: sdb
+    useAllNodes: false
+    useAllDevices: false
+  monitoring:
+    enabled: false
+  healthCheck:
+    daemonHealth:
+      mon:
+        interval: 45s
+        timeout: 600s
+  priorityClassNames:
+    all: system-node-critical
+    mgr: system-cluster-critical
+  disruptionManagement:
+    managePodBudgets: true
+  cephConfig:
+    global:
+      osd_pool_default_size: "1"
+      mon_warn_on_pool_no_redundancy: "false"
+---
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: test-pool
+  namespace: rook-ceph
+spec:
+  replicated:
+    size: 1
+

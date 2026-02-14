@@ -1,0 +1,86 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: argocd-test
+  namespace: argocd
+spec:
+  sourceRepos:
+  - 'https://github.com/uladzislau-hurynovich/argocd-test'
+  destinations:
+  - namespace: default
+    server: https://kubernetes.default.svc
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-test-app
+  namespace: argocd
+spec:
+  project: argocd-test
+  source:
+    repoURL: https://github.com/uladzislau-hurynovich/argocd-test
+    targetRevision: main
+    path: test-app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+      - ServerSideApply=true
+      - Replace=true
+      - SetDeletionFinalizer=true
+---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: my-helm-app
+#   namespace: argocd
+# spec:
+#   project: argocd-test
+#   source:
+#     repoURL: https://github.com/uladzislau-hurynovich/argocd-test
+#     targetRevision: main
+#     path: charts/mychart
+#     helm:
+#       valueFiles:
+#         - values.yaml
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: default
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: super-mario
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://tech-preta.github.io/charts/
+    chart: techpreta
+    targetRevision: 0.1.1
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+      - ServerSideApply=true
+      - Replace=true
+      - SetDeletionFinalizer=true
