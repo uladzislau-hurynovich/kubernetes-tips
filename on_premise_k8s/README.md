@@ -131,7 +131,7 @@ apt-mark hold kubelet kubeadm kubectl
 systemctl enable --now kubelet
 ```
 4.1. Init a cluster and join worker nodes
-- Master node
+Master node
 ```bash
 kubeadm init --pod-network-cidr=10.244.0.0/16
 mkdir -p $HOME/.kube
@@ -157,8 +157,8 @@ kubeadm token create --print-join-command
 kubeadm join 192.168.1.100:6443 --token i8vsnp.ezpdqmusb01qhihd \
         --discovery-token-ca-cert-hash sha256:c887a0e1fe692d1c1c652c8d1840c00facc08ea236411045ba886f47060c7055
 ```
-4.2. Init a cluster and join control planes and worker nodes (HA, stacked etcd)
-4.2.1. Configure NGINX tcp balancer
+4.2. Init a cluster and join control planes and worker nodes (HA, stacked etcd) \
+4.2.1. Configure NGINX tcp balancer \
 Install NGINX and add config to the /etc/nginx/nginx.conf file
 ```bash
 stream {
@@ -184,9 +184,15 @@ stream {
     }
 }
 ```
-- Master node. Init and join control planes.
+-If you are going to use DNS, you need to add record to the /etc/hosts file
 ```bash
-sudo kubeadm init --control-plane-endpoint "<tcp_balancer_ip>:<tcp_balancer_port>" --upload-certs --pod-network-cidr=10.244.0.0/16
+sudo vi /etc/hosts
+
+192.168.1.200  control-plane.local
+```
+Master node. Init and join control planes.
+```bash
+sudo kubeadm init --control-plane-endpoint "<tcp_balancer_ip>or<tcp_balancer_dns>:<tcp_balancer_port>" --upload-certs --pod-network-cidr=10.244.0.0/16
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
@@ -211,11 +217,11 @@ kubeadm join 192.168.1.100:6443 --token i8vsnp.ezpdqmusb01qhihd \
         --discovery-token-ca-cert-hash sha256:c887a0e1fe692d1c1c652c8d1840c00facc08ea236411045ba886f47060c7055
 ```
 4.2.2. Configure keepalived (VIP)
-Install keepalived
+Install keepalived on all control-plane nodes.
 ```bash
 sudo apt-get install -y keepalived psmisc
 ```
-Create the script
+Create the script on all control-plane nodes.
 ```bash
 sudo vim /etc/keepalived/check_apiserver.sh
 
@@ -286,9 +292,9 @@ sudo systemctl start keepalived
 sudo systemctl status keepalived
 ip addr show <network_interface>
 ```
-- Master node. Init and join control planes.
+Master node. Init and join control planes.
 ```bash
-sudo kubeadm init --control-plane-endpoint "<keepalived>:6443" --upload-certs --pod-network-cidr=10.244.0.0/16
+sudo kubeadm init --control-plane-endpoint "<keepalived_ip>:6443" --upload-certs --pod-network-cidr=10.244.0.0/16
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
