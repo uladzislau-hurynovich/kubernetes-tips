@@ -76,7 +76,7 @@ sysctl --system
 ```
 For VIP/Keepalived
 ```bash
-cat <<EOF | tee /etc/sysctl.d/k8s.conf
+cat <<EOF | tee /etc/sysctl.d/keepalived.conf
 sysctl net.ipv4.ip_nonlocal_bind =1
 EOF
 sysctl --system
