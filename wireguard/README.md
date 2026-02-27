@@ -81,6 +81,7 @@ PersistentKeepalive = 25
 ## 9. Add client to server
 ```bash
 sudo wg set wg0 peer <client_public.key> allowed-ips 10.0.0.2/32
+sudo wg-quick save wg0
 ```
 ## 10. Troubleshooting
 - WireGuard status

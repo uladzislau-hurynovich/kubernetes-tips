@@ -834,6 +834,26 @@ serverFiles:
           annotations:
             summary: "Low free memory on {{ $labels.node }}"
             description: "Node {{ $labels.node }} has only {{ $value | humanize1024 }} free memory."
+      - name: node-cpu-alerts
+        rules:
+        - alert: NodeCPUHigh
+          expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 80
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High CPU usage on {{ $labels.instance }}"
+            description: "CPU usage is above 80% on {{ $labels.instance }} (current value: {{ $value }}%)"
+      - name: test-alerts
+        rules:
+        - alert: AlwaysFiringTest
+          expr: vector(1)
+          for: 10s
+          labels:
+            severity: info
+          annotations:
+            summary: "This is a test alert"
+            description: "If you see this email — template works."
 
 
     
@@ -860,7 +880,7 @@ serverFiles:
         static_configs:
           - targets:
             - localhost:9090
-      - job_name: 'traefik'
+      - job_name: traefik
         metrics_path: /metrics
         static_configs:
           - targets: ['traefik-metrics.traefik.svc.cluster.local:9100']
@@ -1327,8 +1347,15 @@ alertmanager:
   ##
   enabled: true
 
+  templates:
+    - 'email.tmpl'
+
   config:
-    global: {}
+    global:
+      resolve_timeout: 5m
+      smtp_smarthost: 'mailhog:1025'
+      smtp_from: 'alertmanager@example.com'
+      smtp_require_tls: false
 
     route:
       group_by: ['alertname', 'severity', 'node']
@@ -1336,14 +1363,54 @@ alertmanager:
       group_wait: 10s
       group_interval: 5m
       repeat_interval: 3h
+      routes:
+        - receiver: mailhog
+          matchers:
+            - severity="critical"
+          active_time_intervals:
+            - workhours
+        - receiver: mailhog
+          matchers:
+            - severity="warning"
+          active_time_intervals:
+            - workhours
+        - receiver: mailhog
+          matchers:
+            - severity="info"
+          active_time_intervals:
+            - workhours
 
     receivers:
       - name: mailhog
         email_configs:
           - to: test@example.com
-            from: alertmanager@example.com
-            smarthost: mailhog:1025
-            require_tls: false
+            headers:
+              subject: '{{ template "custom.subject" . }}'
+            html: '{{ template "custom.html" . }}'
+
+    time_intervals:
+      - name: workhours
+        time_intervals:
+          - times:
+              - start_time: '09:00'
+                end_time: '17:00'
+            weekdays:
+              - monday:friday
+
+  templates:
+    email.tmpl: |-
+      {{ define "custom.subject" }}
+      🚨 {{ .Status | toUpper }}: {{ .CommonLabels.alertname }} on {{ .CommonLabels.node }}
+      {{ end }}
+
+      {{ define "custom.html" }}
+      <h2>🚨 Prometheus Alert</h2>
+      <b>Status:</b> {{ .Status }}<br>
+      <b>Alert:</b> {{ .CommonLabels.alertname }}<br>
+      <b>Node:</b> {{ .CommonLabels.node }}<br>
+      <b>Severity:</b> {{ .CommonLabels.severity }}<br><br>
+      {{ .CommonAnnotations.description }}
+      {{ end }}
 
   persistence:
     ## If true, storage will create or use Persistence Volume

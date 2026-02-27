@@ -379,7 +379,8 @@ helm upgrade --install grafana grafana/grafana -f grafana-values.yaml --namespac
 - Loki (SingleBinary)
 ```bash
 helm repo add grafana https://grafana.github.io/helm-charts
-helm upgrade --install loki grafana/loki -f loki-values.yaml -n monitoring --version 6.44.0 --create-namespace
+helm upgrade --install loki grafana/loki -f loki-values.yaml -n monitoring --version 6.50.0 --create-namespace
+helm upgrade --install loki grafana/loki -f loki-values-single-binary.yaml -n monitoring --version 6.50.0 --create-namespace
 ```
 - Promtail
 ```bash
@@ -441,7 +442,7 @@ helm upgrade --install fluent-bit fluent/fluent-bit -f opensearch-fluentbit-valu
 - Argocd
 ```bash
 helm repo add argo https://argoproj.github.io/argo-helm
-helm upgrade --install argocd argo/argo-cd -f argocd-values.yaml --namespace argocd --create-namespace --version 9.3.7
+helm upgrade --install argocd argo/argo-cd -f argocd-values.yaml --namespace argocd --create-namespace --version 9.4.5
 ```
 - Longhorn
 Install **open-iscsi**,**nfs-common**, enable **iscsi_tcp**
@@ -465,7 +466,7 @@ helm repo add traefik https://traefik.github.io/charts
 helm upgrade --install traefik traefik/traefik -f traefik-values.yaml --namespace traefik --create-namespace
 ```
 
-- Elasticsearch, Kibana, logstash
+- Elasticsearch, Kibana, FluentBit
 ```bash
 helm repo add elastic https://helm.elastic.co
 helm install elastic-operator elastic/eck-operator -n elastic-system --create-namespace
@@ -496,6 +497,13 @@ helm upgrade --install --create-namespace --namespace rook-ceph rook-ceph rook-r
 kubectl apply -f ceph-cluster.yaml
 ```
 
+- Gitlab-Runner
+```bash
+helm repo add gitlab https://charts.gitlab.io
+kubectl create secret generic gitlab-runner-secret --from-literal=runner-token="glrt-mz5zUnjErBQ5-Ncq5GUkjm86MQpwOjFiaGh0egp0OjMKdTo1YWZxaxg.01.1j1ai2rk5" --from-literal=runner-registration-token="" --namespace=gitlab-runner
+helm upgrade --install  gitlab-runner --create-namespace --namespace gitlab-runner -f gitlab-values.yaml gitlab/gitlab-runner --version 0.86.0
+
+```
 
 https://blog.risingstack.com/ceph-storage-deployment-vm/
 https://medium.com/@satishdotpatel/ceph-integration-with-kubernetes-using-ceph-csi-c434b41abd9c
@@ -512,4 +520,6 @@ https://habr.com/ru/articles/465399/#vm
   - **Storage:** 200 GB free space
 ---
 
+
+--take-ownership if set, upgrade will ignore the check for helm annotations and take ownership of the existing resources
 
