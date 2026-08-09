@@ -12,3 +12,10 @@ repoServer:
 
 applicationSet:
   replicas: 1
+
+configs:
+  rbac:
+    policy.csv: |
+      g, vlad, proj:les:les-qa
+  cm:
+    accounts.vlad: login

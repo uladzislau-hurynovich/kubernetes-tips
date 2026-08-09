@@ -98,13 +98,13 @@ swapoff -a
 Install containerd ([Link](https://github.com/containerd/containerd/blob/main/docs/getting-started.md)). ***Check versions!!!*** \
 Install runc
 ```bash
-wget https://github.com/opencontainers/runc/releases/download/v1.4.0/runc.amd64
+wget https://github.com/opencontainers/runc/releases/download/v1.5.1/runc.amd64
 install -m 755 runc.amd64 /usr/local/sbin/runc
 ```
 Install and configure containerd
 ```bash
-wget https://github.com/containerd/containerd/releases/download/v2.2.1/containerd-2.2.1-linux-amd64.tar.gz
-tar Cxzvf /usr/local containerd-2.2.1-linux-amd64.tar.gz
+wget https://github.com/containerd/containerd/releases/download/v2.2.1/containerd-2.3.3-linux-amd64.tar.gz
+tar Cxzvf /usr/local containerd-2.3.3-linux-amd64.tar.gz
 mkdir /etc/containerd
 containerd config default | tee /etc/containerd/config.toml
 #Add to the /etc/containerd/config.toml
@@ -122,7 +122,7 @@ systemctl status containerd
 Install kubelet kubeadm kubectl ([Link](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/))
 ```bash
 apt-get update
-apt-get install -y apt-transport-https ca-certificates curl gpg
+apt-get install -y apt-transport-https ca-certificates curl gpg nftables
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.35/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 apt-get update
@@ -442,7 +442,7 @@ helm upgrade --install fluent-bit fluent/fluent-bit -f opensearch-fluentbit-valu
 - Argocd
 ```bash
 helm repo add argo https://argoproj.github.io/argo-helm
-helm upgrade --install argocd argo/argo-cd -f argocd-values.yaml --namespace argocd --create-namespace --version 9.4.5
+helm upgrade --install argocd argo/argo-cd -f argocd-values.yaml --namespace argocd --create-namespace --version 9.5.15  --force-conflicts
 ```
 - Longhorn
 Install **open-iscsi**,**nfs-common**, enable **iscsi_tcp**
@@ -502,7 +502,82 @@ kubectl apply -f ceph-cluster.yaml
 helm repo add gitlab https://charts.gitlab.io
 kubectl create secret generic gitlab-runner-secret --from-literal=runner-token="glrt-mz5zUnjErBQ5-Ncq5GUkjm86MQpwOjFiaGh0egp0OjMKdTo1YWZxaxg.01.1j1ai2rk5" --from-literal=runner-registration-token="" --namespace=gitlab-runner
 helm upgrade --install  gitlab-runner --create-namespace --namespace gitlab-runner -f gitlab-values.yaml gitlab/gitlab-runner --version 0.86.0
+```
 
+- Jenkins
+```bash
+helm repo add jenkinsci https://charts.jenkins.io
+helm repo update
+helm upgrade --install jenkins --create-namespace --namespace jenkins -f jenkins-values.yaml jenkinsci/jenkins --version 5.9.7
+```
+
+- MongoDB (Persona)
+```bash
+helm repo add percona https://percona.github.io/percona-helm-charts/
+helm repo update
+helm install psmdb-operator-crds percona/psmdb-operator-crds --create-namespace --namespace mongodb
+helm upgrade --install my-op percona/psmdb-operator --create-namespace --namespace mongodb
+helm upgrade --install cluster1 percona/psmdb-db -f mongodb-values.yaml --create-namespace --namespace mongodb
+```
+Connect with tls
+```bash
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongo-client-auth
+  namespace: mongodb
+spec:
+  containers:
+  - name: mongosh
+    image: percona/percona-server-mongodb:8.0
+    command: ["sleep", "3600"]
+    volumeMounts:
+    - name: ssl-certs
+      mountPath: /certs
+      readOnly: true
+  volumes:
+  - name: ssl-certs
+    secret:
+      secretName: cluster1-psmdb-db-ssl
+EOF
+kubectl exec -it mongo-client-auth -n mongodb -- bash
+cat /certs/tls.crt /certs/tls.key > /tmp/combined.pem
+mongosh "mongodb://databaseAdmin:YTYRmj3jAJvxgRjo@cluster1-psmdb-db-mongos:27017/admin?tls=true&tlsAllowInvalidCertificates=true" --tlsCertificateKeyFile /tmp/combined.pem
+```
+
+- MongoDB (Kubelauncher)
+```bash
+helm repo add kubelauncher https://kubelauncher.github.io/charts
+helm repo update
+helm upgrade --install mongodb kubelauncher/mongodb --create-namespace --namespace mongodb -f kubelauncher-mongodb-values.yaml
+
+```
+Connect with tls
+```bash
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongo-client-auth
+  namespace: mongodb
+spec:
+  containers:
+  - name: mongosh
+    image: percona/percona-server-mongodb:8.0
+    command: ["sleep", "3600"]
+    volumeMounts:
+    - name: ssl-certs
+      mountPath: /certs
+      readOnly: true
+  volumes:
+  - name: ssl-certs
+    secret:
+      secretName: cluster1-psmdb-db-ssl
+EOF
+kubectl exec -it mongo-client-auth -n mongodb -- bash
+cat /certs/tls.crt /certs/tls.key > /tmp/combined.pem
+mongosh "mongodb://databaseAdmin:YTYRmj3jAJvxgRjo@cluster1-psmdb-db-mongos:27017/admin?tls=true&tlsAllowInvalidCertificates=true" --tlsCertificateKeyFile /tmp/combined.pem
 ```
 
 https://blog.risingstack.com/ceph-storage-deployment-vm/
